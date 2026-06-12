@@ -1,9 +1,8 @@
 "use client";
 import { useTweetStore } from "@/store/useTweetStore";
 
-export default function SearchBar() {
-  const { searchQuery, setSearchQuery, activeTag, setActiveTag, getAllTags } = useTweetStore();
-  const tags = getAllTags();
+export default function SearchBar({ tags }: { tags: string[] }) {
+  const { searchQuery, setSearchQuery, activeTag, setActiveTag } = useTweetStore();
 
   return (
     <div className="search-area">
