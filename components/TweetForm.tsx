@@ -1,8 +1,13 @@
 "use client";
 import { useState, useRef } from "react";
 import { useTweetStore } from "@/store/useTweetStore";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
-export default function TweetForm() {
+type TweetFormProps = {
+  onTweetSaved?: () => void | Promise<void>;
+};
+
+export default function TweetForm({ onTweetSaved }: TweetFormProps) {
   const [content, setContent] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -19,9 +24,38 @@ export default function TweetForm() {
     });
   };
 
+  const saveTweetToSupabase = async (tweetContent: string) => {
+    const supabase = createSupabaseBrowserClient();
+    if (!supabase) {
+      console.warn("Supabase environment variables are not set.");
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("tweets")
+      .insert({ content: tweetContent })
+      .select("*")
+      .single();
+
+    if (error) {
+      console.error("Failed to insert tweet into Supabase:", error);
+      return;
+    }
+
+    console.log("Inserted Supabase tweet:", data);
+    await onTweetSaved?.();
+  };
+
   const handleSubmit = () => {
-    if (!content.trim() && images.length === 0) return;
-    postTweet(content.trim(), images);
+    const trimmedContent = content.trim();
+    if (!trimmedContent && images.length === 0) return;
+
+    postTweet(trimmedContent, images);
+
+    if (trimmedContent) {
+      void saveTweetToSupabase(trimmedContent);
+    }
+
     setContent("");
     setImages([]);
   };
